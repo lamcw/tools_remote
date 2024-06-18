@@ -52,7 +52,7 @@ public final class GoogleAuthUtils {
     Preconditions.checkNotNull(options);
 
     final SslContext sslContext =
-        options.tlsEnabled ? createSSlContext(options.tlsCertificate) : null;
+        options.tlsEnabled ? createSSlContext(options) : null;
 
     try {
       NettyChannelBuilder builder =
@@ -74,20 +74,31 @@ public final class GoogleAuthUtils {
     }
   }
 
-  private static SslContext createSSlContext(@Nullable String rootCert) throws IOException {
-    if (rootCert == null) {
+  private static SslContext createSSlContext(AuthAndTLSOptions options) throws IOException {
+    if (options.tlsCertificate == null) {
       try {
         return GrpcSslContexts.forClient().build();
       } catch (Exception e) {
         String message = "Failed to init TLS infrastructure: " + e.getMessage();
         throw new IOException(message, e);
       }
+    } else if (options.tlsCaCertificate != null && options.tlsCertificate != null) {
+      try {
+        return GrpcSslContexts.forClient()
+                  .trustManager(new File(options.tlsCaCertificate))
+                  .keyManager(new File(options.tlsCertificate), new File(options.tlsKey))
+                  .build();
+      } catch (Exception e) {
+        String message = "Failed to init TLS infrastructure using '%s' as CA certificate: %s";
+        message = String.format(message, options.tlsCaCertificate, e.getMessage());
+        throw new IOException(message, e);
+      }
     } else {
       try {
-        return GrpcSslContexts.forClient().trustManager(new File(rootCert)).build();
+        return GrpcSslContexts.forClient().trustManager(new File(options.tlsCertificate)).build();
       } catch (Exception e) {
         String message = "Failed to init TLS infrastructure using '%s' as root certificate: %s";
-        message = String.format(message, rootCert, e.getMessage());
+        message = String.format(message, options.tlsCertificate, e.getMessage());
         throw new IOException(message, e);
       }
     }

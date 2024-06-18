@@ -50,9 +50,19 @@ public final class AuthAndTLSOptions {
   public boolean tlsEnabled = false;
 
   @Parameter(
+      names = "--tls_ca_certificate",
+      description = "Specify the TLS certificate that is trusted to sign server certificates.")
+  public String tlsCaCertificate = null;
+
+  @Parameter(
       names = "--tls_certificate",
       description = "Specify the TLS client certificate to use.")
   public String tlsCertificate = null;
+
+  @Parameter(
+      names = "--tls_key",
+      description = "Specify the TLS client key to use for mTLS.")
+  public String tlsKey = null;
 
   @Parameter(
       names = "--tls_authority_override",
